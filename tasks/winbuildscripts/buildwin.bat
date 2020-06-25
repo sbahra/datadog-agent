@@ -14,7 +14,7 @@ REM don't use `OUTDIR` as an environment variable. It will confuse the VC build
 set PKG_OUTDIR=c:\mnt\build-out\%CI_JOB_ID%
 
 set OMNIBUS_BUILD=agent.omnibus-build
-set OMNIBUS_ARGS=--python-runtimes "%PY_RUNTIMES%"
+set OMNIBUS_ARGS=--python-runtimes "%PY_RUNTIMES%" --log-level "debug"
 
 if "%OMNIBUS_TARGET%" == "iot" set OMNIBUS_ARGS=--iot
 if "%OMNIBUS_TARGET%" == "dogstatsd" set OMNIBUS_BUILD=dogstatsd.omnibus-build && set OMNIBUS_ARGS=
