@@ -258,7 +258,7 @@ func (r *Runner) work() {
 		doLog, lastLog := shouldLog(check.ID())
 
 		if doLog {
-			log.Infof("Running check %s", check)
+			log.Infoc("Running check", "check", check)
 		} else {
 			log.Debugf("Running check %s", check)
 		}
@@ -319,13 +319,12 @@ func (r *Runner) work() {
 		}
 		r.m.Unlock()
 
-		l := "Done running check %s"
+		l := "Done running check"
 		if doLog {
 			if lastLog {
 				l = l + fmt.Sprintf(", next runs will be logged every %v runs", config.Datadog.GetInt64("logging_frequency"))
 			}
-			log.Infof(l, check)
-			log.Infoc("Done running",
+			log.Infoc(l,
 				"check", check.String(),
 			)
 		} else {
