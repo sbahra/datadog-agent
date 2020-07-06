@@ -19,18 +19,22 @@ import (
 type processFixture struct {
 	name      string
 	check     processCheck
-	processes map[int32]*process.FilledProcess
+	processes processes
 	expKV     compliance.KVMap
 	expError  error
+	useCache  bool
 }
 
 func (f *processFixture) run(t *testing.T) {
 	t.Helper()
 
 	reporter := f.check.reporter.(*mocks.Reporter)
-	cache.Cache.Delete(processCacheKey)
-	processFetcherFunc = func() (map[int32]*process.FilledProcess, error) {
+	processFetcherFunc = func() (processes, error) {
 		return f.processes, nil
+	}
+
+	if !f.useCache {
+		cache.Cache.Delete(processCacheKey)
 	}
 
 	expectedCalls := 0
@@ -159,4 +163,55 @@ func TestProcessCheck(t *testing.T) {
 			tt.run(t)
 		})
 	}
+}
+
+func TestProcessCheckCache(t *testing.T) {
+	// Run first fixture, populating cache
+	firstContent := processFixture{
+		check: processCheck{
+			baseCheck: newTestBaseCheck(&mocks.Reporter{}, checkKindProcess),
+			process: &compliance.Process{
+				Name: "proc1",
+				Report: compliance.Report{
+					{
+						Kind:     "flag",
+						Property: "--path",
+						As:       "path",
+					},
+				},
+			},
+		},
+		processes: map[int32]*process.FilledProcess{
+			42: {
+				Name:    "proc1",
+				Cmdline: []string{"arg1", "--path=foo"},
+			},
+		},
+		expKV: compliance.KVMap{
+			"path": "foo",
+		},
+	}
+	firstContent.run(t)
+
+	// Run second fixture, using cache
+	secondFixture := processFixture{
+		check: processCheck{
+			baseCheck: newTestBaseCheck(&mocks.Reporter{}, checkKindProcess),
+			process: &compliance.Process{
+				Name: "proc1",
+				Report: compliance.Report{
+					{
+						Kind:     "flag",
+						Property: "--path",
+						As:       "path",
+					},
+				},
+			},
+		},
+		expKV: compliance.KVMap{
+			"path": "foo",
+		},
+		useCache: true,
+	}
+	secondFixture.run(t)
 }
